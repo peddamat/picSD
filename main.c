@@ -20,6 +20,8 @@
 #pragma config WDTEN=OFF        // WDT off
 #pragma config MCLRE=EXTMCLR    // external MCLR pin enabled
 
+#define SD_TIMEOUT 255
+
 // 512 byte read buffer
 unsigned char SDRdata[512];
 // 512 byte write buffer
@@ -28,6 +30,26 @@ unsigned char SDWdata[512];
 unsigned char SDcommand[6];
 // no response flag
 unsigned char no_response = 0;
+// timeout variable to determine card timeout
+unsigned char timeout = SD_TIMEOUT;
+
+unsigned char SDcard_get_response(unsigned char response){
+    // read back response
+    // response time is 0 to 8 bytes
+    no_response = 1;
+    while(no_response && timeout){
+        spi_receive(SDRdata, 8); // read 8 bytes of data
+        for(unsigned char b = 0; b < 8; b++){ // go through received bytes
+            if(SDRdata[b] == response) no_response = 0; // if response matches
+        }
+    }
+    if(timeout == 0){ // if loop has timed out
+        return 1;
+    }
+    if(no_response == 0){ // if response received
+        return 0;
+    }
+}
 
 void SDcard_init(void){
     // send debug message
@@ -57,14 +79,7 @@ void SDcard_init(void){
     spi_send(SDcommand, 6);
 
     // read back response
-    // response time is 0 to 8 bytes
-    no_response = 1;
-    while(no_response){
-            spi_receive(SDRdata, 8);
-            for(unsigned char b = 0; b < 8; b++){
-                    if(SDRdata[b] == 0x01) no_response = 0;
-            }
-    }
+    SDcard_get_response(0x01);
     uart_puts("success!\n");
     
     uart_puts("Sending CMD1, awaiting response...");
@@ -110,25 +125,11 @@ void SDcard_read_block(void){
     spi_send(SDcommand, 6);
 
     // read back response
-    // response time is 0 to 8 bytes
-    no_response = 1;
-    while(no_response){
-            spi_receive(SDRdata, 8);
-            for(unsigned char b = 0; b < 8; b++){
-                    if(SDRdata[b] == 0x00) no_response = 0;
-            }
-    }
+    SDcard_get_response(0x00);
     uart_puts("success!\n");
 
     // read back response
-    // response time is 0 to 8 bytes
-    no_response = 1;
-    while(no_response){
-            spi_receive(SDRdata, 8);
-            for(unsigned char b = 0; b < 8; b++){
-                    if(SDRdata[b] == 0xFE) no_response = 0;
-            }
-    }
+    SDcard_get_response(0xFE);
 
     // receive data block
     spi_receive(SDRdata, 512);
