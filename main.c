@@ -42,6 +42,7 @@ unsigned char SDcard_get_response(unsigned char response){
         for(unsigned char b = 0; b < 8; b++){ // go through received bytes
             if(SDRdata[b] == response) no_response = 0; // if response matches
         }
+        timeout--;
     }
     if(timeout == 0){ // if loop has timed out
         return 1;
