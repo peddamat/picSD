@@ -38,10 +38,8 @@ unsigned char SDcard_get_response(unsigned char response){
     // response time is 0 to 8 bytes
     no_response = 1;
     while(no_response && timeout){
-        spi_receive(SDRdata, 8); // read 8 bytes of data
-        for(unsigned char b = 0; b < 8; b++){ // go through received bytes
-            if(SDRdata[b] == response) no_response = 0; // if response matches
-        }
+        spi_receive(SDRdata, 1); // read one byte
+        if(SDRdata[0] == response) no_response = 0; // check if response matches
         timeout--;
     }
     if(timeout == 0){ // if loop has timed out
@@ -109,17 +107,17 @@ void SDcard_init(void){
     uart_puts("SD card initialized successfully!\n");
 }
 
-void SDcard_read_block(void){
+void SDcard_read_block(unsigned long address){
     uart_puts("Sending CMD17...");
     // set CS low
     LATCbits.LATC1 = 0;
     // load CMD17 with proper
     // block address
     SDcommand[0] = 0x51; // 0x40 | 0x11 (17)
-    SDcommand[1] = 0x00;
-    SDcommand[2] = 0x00;
-    SDcommand[3] = 0x00;
-    SDcommand[4] = 0x00;
+    SDcommand[1] = (address>>24) & 0xFF;
+    SDcommand[2] = (address>>16) & 0xFF;
+    SDcommand[3] = (address>>8) & 0xFF;
+    SDcommand[4] = address & 0xFF;
     SDcommand[5] = 0xFF;
 
     // send command
@@ -143,13 +141,7 @@ void SDcard_read_block(void){
     LATCbits.LATC1 = 1;
     uart_puts("Printing SDRdata\n");
     for(unsigned int b = 0; b < 512; b++){
-        if( (b % 16) == 0 ){
-            uart_putc('\n');
             uart_putc(SDRdata[b]);
-        }
-        else{
-            uart_putc(SDRdata[b]);
-        }
     }
 }
 
@@ -162,7 +154,7 @@ int main(void){
     SSP1CON1bits.SSPM = 0;  // change clock speed to FOSC/4
     SSP1CON1bits.SSPEN = 1; // enable MSSP
 
-    SDcard_read_block();
+    SDcard_read_block(0x00010e00);
 
     TRISCbits.TRISC0 = 0;
     LATCbits.LATC0 = 1;
