@@ -32,6 +32,8 @@ unsigned char SDcommand[6];
 unsigned char no_response = 0;
 // timeout variable to determine card timeout
 unsigned char timeout = SD_TIMEOUT;
+// holds partition 1 PBR address
+unsigned long part1_addr;
 
 unsigned char SDcard_get_response(unsigned char response){
     // read back response
@@ -45,9 +47,8 @@ unsigned char SDcard_get_response(unsigned char response){
     if(timeout == 0){ // if loop has timed out
         return 1;
     }
-    if(no_response == 0){ // if response received
-        return 0;
-    }
+    // if response received
+    return 0;
 }
 
 void SDcard_init(void){
@@ -127,22 +128,19 @@ void SDcard_read_block(unsigned long address){
     SDcard_get_response(0x00);
     uart_puts("success!\n");
 
-    // read back response
+    // read back response and
+    // wait for data token FEh
     SDcard_get_response(0xFE);
-
     // receive data block
     spi_receive(SDRdata, 512);
-    // flush CRC
+    // flush two bytes of CRC data
     SDWdata[0] = 0xFF;
     SDWdata[1] = 0xFF;
-    spi_send(SDWdata, 2);
+    SDWdata[2] = 0xFF;
+    spi_send(SDWdata, 3);
 
     // set SD card CS high
     LATCbits.LATC1 = 1;
-    uart_puts("Printing SDRdata\n");
-    for(unsigned int b = 0; b < 512; b++){
-            uart_putc(SDRdata[b]);
-    }
 }
 
 int main(void){
@@ -154,7 +152,29 @@ int main(void){
     SSP1CON1bits.SSPM = 0;  // change clock speed to FOSC/4
     SSP1CON1bits.SSPEN = 1; // enable MSSP
 
-    SDcard_read_block(0x00010e00);
+    
+    // read sector 0 from card
+    SDcard_read_block(0x00000000);
+    // calculate address of partition 1 PBR (first sector)
+    // read parition 1 LBA from MBR
+    // LBA 4 bytes at address 0x01be offset 0x08
+    // Little Endian
+    part1_addr = (unsigned long)SDRdata[0x01C6];
+    part1_addr |= ((unsigned long)SDRdata[0x01C7]<<8);
+    part1_addr |= ((unsigned long)SDRdata[0x01C8]<<16);
+    part1_addr |= ((unsigned long)SDRdata[0x01C9]<<24);
+    // multiply LBA by sector size to
+    // get address of first sector of first partition
+    part1_addr *= 0x00000200;
+    
+    // read first sector (PBR) of
+    // partition 1
+    SDcard_read_block(part1_addr);
+
+    uart_puts("Printing SDRdata\n");
+    for(unsigned int b = 0; b < 512; b++){
+            uart_putc(SDRdata[b]);
+    }
 
     TRISCbits.TRISC0 = 0;
     LATCbits.LATC0 = 1;
