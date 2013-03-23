@@ -1,6 +1,7 @@
 #include <xc.h>
 #include "fatfs.h"
 #include "sdcard.h"
+#include "uart.h"
 
 // holds partition 1 PBR address
 unsigned long part1_addr;
@@ -69,4 +70,61 @@ void mount_disk(void){
 
     // calculate start address of data region
     datareg_start = rootdir_start + (root_entries * 32);
+}
+
+void file_create(const unsigned char* filename){
+    // read first sector of FAT1
+    SDcard_read_block(FAT_address[0]);
+    // find first unallocated cluster
+    uart_puts("Searching first unallocated cluster...");
+    unsigned int cluster;
+    for(cluster = 0; cluster < 0xFFFF; cluster++){
+        if( (SDRdata[cluster*2] == 0) && (SDRdata[(cluster*2)+1] == 0) ) break;
+    }
+    uart_puts("done!\n");
+    // read first sector of root directory table
+    SDcard_read_block(rootdir_start);
+    // search first unallocated entry
+    uart_puts("Searching first unallocated root table entry...");
+    unsigned int entry_addr;
+    for(entry_addr = 0; entry_addr < 0xFFFF; entry_addr += 33){
+        if(SDRdata[entry_addr] == 0xE5) break;
+    }
+    uart_puts("done!\n");
+    uart_puts("Copying input buffer...");
+    // copy read table block to SDWdata
+    for(unsigned int i = 0; i < 512; i++){
+        SDWdata[i] = SDRdata[i];
+    }
+    uart_puts("done!\n");
+    // create file with filename
+    SDWdata[entry_addr+0] = filename[0];
+    SDWdata[entry_addr+1] = filename[1];
+    SDWdata[entry_addr+2] = filename[2];
+    SDWdata[entry_addr+3] = filename[3];
+    SDWdata[entry_addr+4] = filename[4];
+    SDWdata[entry_addr+5] = filename[5];
+    SDWdata[entry_addr+6] = filename[6];
+    SDWdata[entry_addr+7] = filename[7];
+    // add file extension
+    SDWdata[entry_addr+8] = filename[9];
+    SDWdata[entry_addr+9] = filename[10];
+    SDWdata[entry_addr+10] = filename[11];
+    // add attribute byte
+    // archive flag set
+    SDWdata[entry_addr+11] = 0x20;
+    // set all other entries to zero
+    for(unsigned char i = 12; i < 0x1A; i++){
+        SDWdata[i] = 0x00;
+    }
+    // enter file starting cluster
+    SDWdata[entry_addr+0x1A] = cluster & 0xFF;
+    SDWdata[entry_addr+0x1B] = (cluster>>8) & 0xFF;
+    // set initial file size to zero
+    SDWdata[entry_addr+0x1C] = 0x00;
+    SDWdata[entry_addr+0x1D] = 0x00;
+    SDWdata[entry_addr+0x1E] = 0x00;
+    SDWdata[entry_addr+0x1F] = 0x00;
+    // write data block
+    SDcard_write_block(rootdir_start);
 }
