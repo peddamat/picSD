@@ -28,6 +28,14 @@ void spi_init(unsigned char speed_mode){
     SSP1CON1bits.SSPEN = 1; // enable MSSP1
 }
 
+void spi_send_byte(unsigned char data){
+    unsigned char tmp;
+    SSP1BUF = data;
+    while( !PIR1bits.SSP1IF ); // wait for buffer full
+    PIR1bits.SSP1IF = 0; // clear SSP1IF
+    tmp = SSP1BUF;
+}
+
 void spi_send(unsigned char* data, unsigned int length){
     unsigned char tmp;
     while(length != 0){
