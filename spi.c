@@ -1,7 +1,15 @@
 #include <xc.h>
 #include "spi.h"
 
-void spi_init(void){
+/* Initializes the SPI in given speed mode
+ * Argument (Mode):
+ *      0: SCK = FOSC/4
+ *      1: SCK = FOSC/16
+ *      2: SCK = FOSC/64
+ */
+void spi_init(unsigned char speed_mode){
+    // disable MSSP
+    SSP1CON1bits.SSPEN = 0;
     // SDI1 set
     TRISCbits.TRISC4 = 1; // configure RC4 as input
     ANSELCbits.ANSC4 = 0; // enable digital input buffer on RC4
@@ -16,7 +24,7 @@ void spi_init(void){
     SSP1CON1bits.CKP = 0; // Idle state for clock is a low level
     SSP1STATbits.CKE = 1; // Transmit occurs on transition from active to Idle clock state
     SSP1STATbits.SMP = 1; // Input data sampled at end of data output time (took me 5 friggin' hours)
-    SSP1CON1bits.SSPM = 0x02; // SPI Master mode, clock = FOSC/64
+    SSP1CON1bits.SSPM = speed_mode; // SPI Master mode, clock = FOSC/64
     SSP1CON1bits.SSPEN = 1; // enable MSSP1
 }
 

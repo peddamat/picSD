@@ -8,7 +8,7 @@
 #ifndef SPI_H
 #define	SPI_H
 
-void spi_init(void);
+void spi_init(unsigned char speed_mode);
 void spi_send(unsigned char* data, unsigned int length);
 void spi_receive(unsigned char* data, unsigned int length);
 

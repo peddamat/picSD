@@ -145,12 +145,10 @@ void SDcard_read_block(unsigned long address){
 
 int main(void){
     uart_init(57600);
-    spi_init();
+    spi_init(2);
     SDcard_init();
 
-    SSP1CON1bits.SSPEN = 0; // disable MSSP
-    SSP1CON1bits.SSPM = 0;  // change clock speed to FOSC/4
-    SSP1CON1bits.SSPEN = 1; // enable MSSP
+    spi_init(0);
 
     
     // read sector 0 from card
