@@ -17,7 +17,6 @@ unsigned int root_entries;
 // number of sectors per FAT
 unsigned int sectors_FAT;
 
-
 // FAT addresses
 unsigned long FAT_address[2];
 // root directory table start address
@@ -43,6 +42,7 @@ void mount_disk(void){
     // read first sector (PBR) of
     // partition 1
     SDcard_read_block(part1_addr);
+    
     // read out sector size in bytes
     sector_size = SDRdata[0x000B];
     sector_size |= SDRdata[0x000C]<<8;
