@@ -106,6 +106,43 @@ void SDcard_read_block(unsigned long address){
     LATCbits.LATC1 = 1;
 }
 
+void SDcard_write_block(unsigned long address){
+    uart_puts("Sending CMD24...");
+    // set CS low
+    LATCbits.LATC1 = 0;
+    // load CMD24 with proper
+    // block address
+    SDcommand[0] = 0x58; // 0x40 | 0x18 (24)
+    SDcommand[1] = (address>>24) & 0xFF;
+    SDcommand[2] = (address>>16) & 0xFF;
+    SDcommand[3] = (address>>8) & 0xFF;
+    SDcommand[4] = address & 0xFF;
+    SDcommand[5] = 0xFF;
+
+    // send command
+    spi_send(SDcommand, 6);
+
+    // read back response
+    SDcard_get_response(0x00);
+    uart_puts("success!\n");
+
+    // begin block write
+    // send data token 0xFE
+    spi_send_byte(0xFE);
+    // write data block
+    spi_send(SDWdata, 512);
+    // send two byte CRC data
+    spi_send_byte(0xFF);
+    spi_send_byte(0xFF);
+    spi_send_byte(0xFF);
+
+    // wait for card to be ready
+    SDcard_get_response(0xFF);
+
+    // set SD card CS high
+    LATCbits.LATC1 = 1;
+}
+
 unsigned char SDcard_get_response(unsigned char response){
     // read back response
     // response time is 0 to 8 bytes
