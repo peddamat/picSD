@@ -30,6 +30,11 @@ int main(void){
 
     mount_disk();
     file_create("ZETALOGS.TXT");
+
+    file_append("Hello World this is a test logfile!\n");
+    file_append("If you can read this file, everything went fine!\n");
+    file_append("And because I am very curious, I'm adding a third line!\n");
+
     /*
     uart_puts("Printing SDRdata\n");
     for(unsigned int b = 0; b < 512; b++){
