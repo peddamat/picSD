@@ -1,4 +1,5 @@
 #include <xc.h>
+#include <stdlib.h>
 #include "fatfs.h"
 #include "sdcard.h"
 #include "uart.h"
@@ -24,6 +25,10 @@ unsigned long FAT_address[2];
 unsigned long rootdir_start;
 // data region start address
 unsigned long datareg_start;
+
+// buffer
+char address_buffer[10];
+char size_buffer[6];
 
 void mount_disk(void){
     // read sector 0 (MBR) from card
@@ -63,13 +68,13 @@ void mount_disk(void){
     
     // calculate addresses of both FAT copies
     FAT_address[0] = part1_addr + (sectors_reserved * sector_size);
-    FAT_address[1] = FAT_address[0] + (sectors_FAT * sector_size);
+    FAT_address[1] = FAT_address[0] + ((unsigned long)sectors_FAT * (unsigned long)sector_size);
 
     // calculate root directory table start address
-    rootdir_start = FAT_address[1] + (sectors_FAT * sector_size);
+    rootdir_start = FAT_address[1] + ((unsigned long)sectors_FAT * (unsigned long)sector_size);
 
     // calculate start address of data region
-    datareg_start = rootdir_start + (root_entries * 32);
+    datareg_start = rootdir_start + ((unsigned long)root_entries * 32);
 }
 
 void file_create(const unsigned char* filename){
