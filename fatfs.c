@@ -36,8 +36,6 @@ unsigned int entry_addr;
 // file length
 unsigned long file_length = 0;
 
-unsigned char address_buffer[10];
-
 void mount_disk(void){
     // read sector 0 (MBR) from card
     SDcard_read_block(0x00000000);
@@ -108,16 +106,6 @@ void file_create(const unsigned char* filename){
     SDcard_write_block(FAT_address[1]);
     // calculate address of first sector in cluster
     cluster_address = datareg_start + (((unsigned long)(cluster_number-2)) * (unsigned long)sectors_cluster * (unsigned long)sector_size);
-
-    itoa(address_buffer, cluster_number, 10);
-    uart_puts("Cluster number: ");
-    uart_puts(address_buffer);
-    uart_putc('\n');
-
-    ltoa(address_buffer, cluster_address, 16);
-    uart_puts("Cluster address: ");
-    uart_puts(address_buffer);
-    uart_putc('\n');
 
     // read first sector of root directory table
     SDcard_read_block(rootdir_start);
