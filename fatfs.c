@@ -185,33 +185,33 @@ void file_create(const unsigned char* filename){
     SDcard_write_block(rootdir_start);
 }
 
-void file_append(const unsigned char* string){
-    // first unallocated byte offset
-    unsigned char free_byte;
+void file_open(void){
     // read cluster
     SDcard_read_block(cluster_address);
 
     // copy read sector to SDWdata
-    // and find first unallocated byte
     for(unsigned int i = 0; i < 512; i++){
         SDWdata[i] = SDRdata[i];
-        if( SDWdata[i] == 0xFF ) free_byte = i;
     }
+}
 
+void file_close(void){
+    // write cluster to card
+    SDcard_write_block(cluster_address);
+    file_update_size();
+}
+
+void file_append(const unsigned char* string){
     // offset from beginning of write
     // (byte number)
     unsigned char byte_number = 0;
     while(*string){
-        SDWdata[free_byte+byte_number] = *string;
+        SDWdata[file_length+byte_number] = *string;
         string++;
         byte_number++;
     }
 
-    // write cluster to card
-    SDcard_write_block(cluster_address);
-
-    file_length += (unsigned long)(byte_number+1);
-    file_update_size();
+    file_length += (unsigned long)byte_number;
 }
 
 void file_update_size(void){
