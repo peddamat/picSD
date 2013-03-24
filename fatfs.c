@@ -1,5 +1,4 @@
 #include <xc.h>
-#include <stdlib.h>
 #include "fatfs.h"
 #include "sdcard.h"
 #include "uart.h"
@@ -91,7 +90,7 @@ void file_create(const unsigned char* filename){
     // search first unallocated entry
     uart_puts("Searching first unallocated root table entry...");
     unsigned int entry_addr;
-    for(entry_addr = 0; entry_addr < 0xFFFF; entry_addr += 33){
+    for(entry_addr = 0; entry_addr < 0x0200; entry_addr += 32){
         if( (SDRdata[entry_addr] == 0xE5) || (SDRdata[entry_addr] == 0x00) ) break;
     }
     uart_puts("done!\n");
