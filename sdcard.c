@@ -125,6 +125,10 @@ void SDcard_write_block(unsigned long address){
     // read back response
     SDcard_get_response(0x00);
     uart_puts("success!\n");
+
+    // send a one byte gap
+    spi_send_byte(0xFF);
+    
     uart_puts("Sending data block...");
     // begin block write
     // send data token 0xFE
@@ -134,13 +138,20 @@ void SDcard_write_block(unsigned long address){
     // send two byte CRC data
     spi_send_byte(0xFF);
     spi_send_byte(0xFF);
-    spi_send_byte(0xFF);
-    uart_puts("success!\n");
-    uart_puts("Wating for card to finish write process...");
-    // wait for card to be ready
-    if(SDcard_get_response(0xFF)) uart_puts("timeout!");
-    uart_puts("done!\n");
 
+    // read data response
+    spi_receive(SDRdata, 1);
+
+    if( (SDRdata[0] & 0x0F) == 0x0D ) uart_puts("write error occured!\n");
+    if( (SDRdata[0] & 0x0F) == 0x0B ) uart_puts("CRC error occured!\n");
+    if( (SDRdata[0] & 0x0F) == 0x05 ){
+        uart_puts("success!\n");
+        uart_puts("Wating for card to finish write process...");
+        // wait for card to be ready
+        if(SDcard_get_response(0xFF)) uart_puts("timeout!");
+        uart_puts("done!\n");
+    }
+    
     // set SD card CS high
     LATCbits.LATC1 = 1;
 }
