@@ -26,10 +26,6 @@ unsigned long rootdir_start;
 // data region start address
 unsigned long datareg_start;
 
-// buffer
-char address_buffer[10];
-char size_buffer[6];
-
 void mount_disk(void){
     // read sector 0 (MBR) from card
     SDcard_read_block(0x00000000);
