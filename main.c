@@ -29,7 +29,7 @@ int main(void){
     spi_init(0);
 
     mount_disk();
-    file_create("alphalog.txt");
+    file_create("ZETALOGS.TXT");
     /*
     uart_puts("Printing SDRdata\n");
     for(unsigned int b = 0; b < 512; b++){
