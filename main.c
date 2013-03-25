@@ -30,12 +30,43 @@ int main(void){
 
     mount_disk();
     file_create("ZETALOGS.TXT");
-    file_open();
-    file_append("Hello World this is a test logfile!\n");
-    file_append("If you can read this file, everything went fine!\n");
-    file_append("And because I am very curious, I'm adding a third line!\n");
-    file_append("This can be continued until the file has reached it's max length of 512 bytes..\n I am working on it!");
-    file_close();
+    
+    sector_open();
+    file_append("This line contains 32characters\n");
+    file_append("This line also has 32characters\n");
+    file_append("Well it is kinda sorta stupid but");
+    file_append(" we have to write in 512 byte chu");
+    file_append("nks. Convoluted and shiz but geez");
+    file_append(" what ya gonna do?\n There ain't ");
+    file_append("no other solution! Let's start th");
+    file_append("e alphabet, shall we?          \n");
+    file_append("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg");
+    file_append("hijklmnopqrstuvwxyz            \n");
+    file_append("That worked a treat!           \n");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                             \n\n");
+
+    file_append("And now this is the second block ");
+    file_append("of information starting in the ne");
+    file_append("xt cluster. I can write out my bu");
+    file_append("tt here because I will have to fi");
+    file_append("ll 512 bytes to get this block wr");
+    file_append("itten to the text file no other w");
+    file_append("ay :( \n\n The standard log could");
+    file_append(" look like this:             \n\n");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_append("                                 ");
+    file_update_size();
+    
     /*
     uart_puts("Printing SDRdata\n");
     for(unsigned int b = 0; b < 512; b++){

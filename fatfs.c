@@ -29,12 +29,20 @@ unsigned long datareg_start;
 // file specific variables
 // starting cluster number of file
 unsigned int cluster_number;
-// starting cluster address
-unsigned long cluster_address;
+// starting sector of cluster address
+unsigned long start_sector_address;
+// sector address of current sector
+unsigned long current_sector_address;
+// current sector number
+unsigned char current_sector = 0;
 // entry address in root directory table
 unsigned int entry_addr;
+// number of byte in sector
+unsigned int byte_number = 0;
 // file length
 unsigned long file_length = 0;
+
+char address_buffer[10];
 
 void mount_disk(void){
     // read sector 0 (MBR) from card
@@ -105,7 +113,18 @@ void file_create(const unsigned char* filename){
     SDcard_write_block(FAT_address[0]);
     SDcard_write_block(FAT_address[1]);
     // calculate address of first sector in cluster
-    cluster_address = datareg_start + (((unsigned long)(cluster_number-2)) * (unsigned long)sectors_cluster * (unsigned long)sector_size);
+    start_sector_address = datareg_start + (((unsigned long)(cluster_number-2)) * (unsigned long)sectors_cluster * (unsigned long)sector_size);
+    current_sector = 0;
+
+    itoa(address_buffer, cluster_number, 10);
+    uart_puts("Cluster number: ");
+    uart_puts(address_buffer);
+    uart_putc('\n');
+
+    ltoa(address_buffer, start_sector_address, 16);
+    uart_puts("Sector 0 address: ");
+    uart_puts(address_buffer);
+    uart_putc('\n');
 
     // read first sector of root directory table
     SDcard_read_block(rootdir_start);
@@ -116,6 +135,11 @@ void file_create(const unsigned char* filename){
         if( (SDRdata[entry_addr] == 0xE5) || (SDRdata[entry_addr] == 0x00) ) break;
     }
     uart_puts("done!\n");
+
+    ltoa(address_buffer, entry_addr, 16);
+    uart_puts("Entry number: ");
+    uart_puts(address_buffer);
+    uart_putc('\n');
 
     // copy read table block to SDWdata
     for(unsigned int i = 0; i < 512; i++){
@@ -185,9 +209,15 @@ void file_create(const unsigned char* filename){
     SDcard_write_block(rootdir_start);
 }
 
-void file_open(void){
-    // read cluster
-    SDcard_read_block(cluster_address);
+void sector_open(void){
+    // read sector of cluster
+    current_sector_address = start_sector_address + ((unsigned long)current_sector * (unsigned long)sector_size);
+    SDcard_read_block(current_sector_address);
+
+    ltoa(address_buffer, current_sector_address, 16);
+    uart_puts("Address of current sector: ");
+    uart_puts(address_buffer);
+    uart_putc('\n');
 
     // copy read sector to SDWdata
     for(unsigned int i = 0; i < 512; i++){
@@ -195,23 +225,32 @@ void file_open(void){
     }
 }
 
-void file_close(void){
-    // write cluster to card
-    SDcard_write_block(cluster_address);
-    file_update_size();
+void sector_close(void){
+    // write sector to card
+    SDcard_write_block(current_sector_address);
 }
 
 void file_append(const unsigned char* string){
     // offset from beginning of write
     // (byte number)
-    unsigned char byte_number = 0;
     while(*string){
-        SDWdata[file_length+byte_number] = *string;
-        string++;
-        byte_number++;
+        if(byte_number < 512){
+            SDWdata[byte_number] = *string;
+            string++;
+            byte_number++;
+            // increase file length
+            file_length++;
+        }
+        else{
+            // save current sector
+            sector_close();
+            // reset byte counter
+            byte_number = 0;
+            // next sector is needed, load next sector
+            current_sector++;
+            sector_open();
+        }
     }
-
-    file_length += (unsigned long)byte_number;
 }
 
 void file_update_size(void){
@@ -221,7 +260,13 @@ void file_update_size(void){
     for(unsigned int i = 0; i < 512; i++){
         SDWdata[i] = SDRdata[i];
     }
-    // set initial file size to 512 bytes
+
+    ltoa(address_buffer, file_length, 16);
+    uart_puts("File size: ");
+    uart_puts(address_buffer);
+    uart_putc('\n');
+
+    // set file size
     SDWdata[entry_addr+0x1C] = file_length & 0xFF;
     SDWdata[entry_addr+0x1D] = (file_length>>8) & 0xFF;
     SDWdata[entry_addr+0x1E] = (file_length>>16) & 0xFF;
