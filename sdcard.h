@@ -8,7 +8,7 @@
 #ifndef SDCARD_H
 #define	SDCARD_H
 
-#define SD_TIMEOUT 255
+#define SD_TIMEOUT 4096
 
 extern unsigned char SDRdata[512];
 extern unsigned char SDWdata[512];

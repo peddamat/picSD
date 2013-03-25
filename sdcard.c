@@ -12,7 +12,7 @@ unsigned char SDcommand[6];
 // no response flag
 unsigned char no_response = 0;
 // timeout variable to determine card timeout
-unsigned char timeout = SD_TIMEOUT;
+unsigned int timeout = SD_TIMEOUT;
 
 void SDcard_init(void){
     // send debug message
